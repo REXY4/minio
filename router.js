@@ -12,7 +12,7 @@ let minioClient = new Minio.Client({
     endPoint: '127.0.0.1',
     port: 9000,
     useSSL: false,
-    accessKey: 'rizki',
+    accessKey: 'rizki2',
     secretKey: 'User1234'
 });
 
@@ -39,7 +39,7 @@ router.post("/upload", uploadFile("imageFile"),async (req, res) => {
         const imageName = req.files.imageFile[0].filename;
         const location = __dirname + `/uploads/${imageName}`;
         const metaData = {
-            'Content-Type': "image/png",
+            'Content-Type': "image/jpg",
           };
         let fileStream = fs.createReadStream(__dirname + `/uploads/${imageName}`);                
         await fs.stat(location, (err2, stats) => {
@@ -53,11 +53,17 @@ router.post("/upload", uploadFile("imageFile"),async (req, res) => {
                                                 data : err3
                                             });
                             			}else{
-                            			return res.send({
-                                            status : "success",
-                                            message : "send photo success",
-                                            data :  `http://localhost:9000/users/${imageName}`
-                                        });
+                                          
+                                            minioClient.presignedUrl('GET', 'users', imageName, 24*60*60, function(err, presignedUrl) {
+                                                if (err) return console.log(err)
+                                                res.send({
+                                                  "status" : "success",
+                                                  "message" : "File uploaded successfully",
+                                                  "response" : {
+                                                    "photoUrl" : presignedUrl
+                                                  }
+                                                })
+                                              })
                                     }
                             })
                         // minioClient.statObject(minioBucketName, "Screenshot_1645954974.png", function(err, stat) {
